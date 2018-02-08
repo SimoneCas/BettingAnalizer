@@ -17,9 +17,9 @@ import org.springframework.stereotype.Component;
 import com.opencsv.CSVReader;
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.HeaderColumnNameTranslateMappingStrategy;
-import com.opencsv.enums.CSVReaderNullFieldIndicator;
 import com.opencsv.bean.CsvToBeanBuilder;
 
+import it.simonecasamassa.bettinganalizer.model.NextMatch;
 import it.simonecasamassa.bettinganalizer.model.ParsedEntry;
 import it.simonecasamassa.bettinganalizer.model.ParsedEntryData;
 import it.simonecasamassa.bettinganalizer.util.PropertiesReader;
@@ -189,5 +189,38 @@ public class StatisticsReader {
 		for (ParsedEntryData p : list)
 			System.out.println(p.toString());
 		return list;
+	}
+
+	public List<NextMatch> readNewStatistics() {
+		Properties properties = propReader.getProperties();
+		List<NextMatch> matches = new ArrayList<>();
+		try {
+			URL url = new URL(properties.getProperty("PROSSIMI_MATCH"));
+			BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream()));
+
+			Map<String, String> columnMapping = new HashMap<String, String>();
+			columnMapping.put("Div", "division");
+			columnMapping.put("Date", "date");
+			columnMapping.put("HomeTeam", "homeTeam");
+			columnMapping.put("AwayTeam", "awayTeam");
+			
+			HeaderColumnNameTranslateMappingStrategy<NextMatch> strategy = new HeaderColumnNameTranslateMappingStrategy<NextMatch>();
+			strategy.setType(NextMatch.class);
+			strategy.setColumnMapping(columnMapping);
+
+			CSVReader reader = new CSVReader(in);
+			CsvToBean<NextMatch> csvToBean = new CsvToBeanBuilder<NextMatch>(new InputStreamReader(url.openStream()))
+	                .withType(NextMatch.class)
+	                .build();
+			matches = csvToBean.parse(strategy, reader);
+
+			System.out.println(matches.size());
+			for (NextMatch m : matches)
+				System.out.println(m.toString());
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return matches;
 	}
 }
